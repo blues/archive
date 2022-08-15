@@ -23,6 +23,8 @@ import (
 const instanceRouteConfigFile = "route.json"
 const instanceIncomingEvents = "/incoming/"
 
+//const instanceClassifiedEvents = "/classified/"
+
 // Configuration object
 type RouteConfig struct {
 	ArchiveID      string `json:"archive_id"`
@@ -32,7 +34,7 @@ type RouteConfig struct {
 	BucketRegion   string `json:"bucket_region"`
 	FileAccess     string `json:"file_access"`
 	FileFormat     string `json:"file_format"`
-	FileName       string `json:"file_name"`
+	FileFolder     string `json:"file_folder"`
 	KeyID          string `json:"key_id"`
 	KeySecret      string `json:"key_secret"`
 }
@@ -101,9 +103,9 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		rc.FileFormat = "[id]/[year]-[month]/[device]/[when]"
 	}
 
-	rc.FileName, exists = headerField(r, "file_name")
+	rc.FileFolder, exists = headerField(r, "file_folder")
 	if !exists {
-		writeErr(w, "file_name not specified")
+		writeErr(w, "file_folder not specified")
 		return
 	}
 
