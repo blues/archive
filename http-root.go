@@ -21,7 +21,7 @@ import (
 
 // File folders/names
 const instanceRouteConfigFile = "route.json"
-const instanceIncomingEvents = "incoming/"
+const instanceIncomingEvents = "/incoming/"
 
 // Configuration object
 type RouteConfig struct {
@@ -138,7 +138,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Write the event in an atomic way
-	filePath := fmt.Sprintf("%s%s%d", configDataPath(rc.ArchiveID), instanceIncomingEvents, time.Now().UnixNano())
+	filePath := fmt.Sprintf("%s%d", configDataPath(rc.ArchiveID+instanceIncomingEvents), time.Now().UnixNano())
 	err = os.WriteFile(filePath, eventJSON, 0644)
 	if err != nil {
 		fmt.Printf("error writing %s: %s\n", filePath, err)
