@@ -27,16 +27,17 @@ const instanceIncomingEvents = "/incoming/"
 
 // Configuration object
 type RouteConfig struct {
-	ArchiveID      string `json:"archive_id"`
-	ArchiveMins    int    `json:"archive_mins"`
-	BucketEndpoint string `json:"bucket_endpoint"`
-	BucketName     string `json:"bucket_name"`
-	BucketRegion   string `json:"bucket_region"`
-	FileAccess     string `json:"file_access"`
-	FileFormat     string `json:"file_format"`
-	FileFolder     string `json:"file_folder"`
-	KeyID          string `json:"key_id"`
-	KeySecret      string `json:"key_secret"`
+	ArchiveID               string `json:"archive_id"`
+	ArchiveWhenCountExceeds int    `json:"archive_when_count_exceeds"`
+	ArchiveEveryMins        int    `json:"archive_every_mins"`
+	BucketEndpoint          string `json:"bucket_endpoint"`
+	BucketName              string `json:"bucket_name"`
+	BucketRegion            string `json:"bucket_region"`
+	FileAccess              string `json:"file_access"`
+	FileFormat              string `json:"file_format"`
+	FileFolder              string `json:"file_folder"`
+	KeyID                   string `json:"key_id"`
+	KeySecret               string `json:"key_secret"`
 }
 
 // Root handler
@@ -72,10 +73,15 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, "archive_id not specified")
 		return
 	}
-	s, _ := headerField(r, "archive_mins")
-	rc.ArchiveMins, _ = strconv.Atoi(s)
-	if rc.ArchiveMins <= 0 {
-		rc.ArchiveMins = 1440
+	s, _ := headerField(r, "archive_every_mins")
+	rc.ArchiveEveryMins, _ = strconv.Atoi(s)
+	if rc.ArchiveEveryMins <= 0 {
+		rc.ArchiveEveryMins = 1440
+	}
+	s, _ = headerField(r, "archive_when_count_exceeds_mins")
+	rc.ArchiveWhenCountExceeds, _ = strconv.Atoi(s)
+	if rc.ArchiveWhenCountExceeds <= 0 {
+		rc.ArchiveWhenCountExceeds = 1000
 	}
 
 	rc.BucketEndpoint, _ = headerField(r, "bucket_endpoint")
