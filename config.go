@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 // ServiceConfig is the service configuration file format
@@ -19,17 +20,32 @@ type ServiceConfig struct {
 }
 
 // ConfigPath (here for golint)
-const ConfigPath = "/config/config.json"
+const configFilePath = "/config/config.json"
+const dataPath = "/data/"
 
 // Config is our configuration, read out of a file for security reasons
 var Config ServiceConfig
 
-// ServiceReadConfig gets the current value of the service config
-func ServiceReadConfig() {
+// Retrieve the data directory
+func configDataPath(folder string) string {
+	homedir, _ := os.UserHomeDir()
+	path := homedir + dataPath
+	if folder != "" {
+		path += folder
+		if !strings.HasSuffix(path, "/") {
+			path += "/"
+		}
+		os.MkdirAll(path, 0777)
+	}
+	return path
+}
+
+// configLoad gets the current value of the service config
+func configLoad() {
 
 	// Read the file and unmarshall if no error
 	homedir, _ := os.UserHomeDir()
-	path := homedir + ConfigPath
+	path := homedir + configFilePath
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Printf("can't load config from %s: %s\n", path, err)

@@ -9,12 +9,33 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blues/note-go/note"
+	"github.com/google/uuid"
 )
+
+// File folders/names
+const instanceRouteConfigFile = "route.json"
+const instanceIncomingEvents = "incoming/"
+
+// Configuration object
+type RouteConfig struct {
+	ArchiveID      string `json:"archive_id"`
+	ArchiveMins    int    `json:"archive_mins"`
+	BucketEndpoint string `json:"bucket_endpoint"`
+	BucketName     string `json:"bucket_name"`
+	BucketRegion   string `json:"bucket_region"`
+	FileAccess     string `json:"file_access"`
+	FileFormat     string `json:"file_format"`
+	FileName       string `json:"file_name"`
+	KeyID          string `json:"key_id"`
+	KeySecret      string `json:"key_secret"`
+}
 
 // Root handler
 func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +43,6 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	// Get parameters from the request header, validating as we go along
 	parsedURL, _ := url.Parse(r.RequestURI)
 	target := path.Base(parsedURL.Path)
-	fmt.Printf("OZZIE\n")
 	if target == "favicon.ico" {
 		return
 	}
@@ -43,64 +63,89 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveID, exists := headerField(r, "archive_id")
+	var exists bool
+	var rc RouteConfig
+	rc.ArchiveID, exists = headerField(r, "archive_id")
 	if !exists {
 		writeErr(w, "archive_id not specified")
 		return
 	}
 	s, _ := headerField(r, "archive_mins")
-	archiveMins, _ := strconv.Atoi(s)
-	if archiveMins <= 0 {
-		archiveMins = 1440
+	rc.ArchiveMins, _ = strconv.Atoi(s)
+	if rc.ArchiveMins <= 0 {
+		rc.ArchiveMins = 1440
 	}
 
-	bucketEndpoint, _ := headerField(r, "bucket_endpoint")
+	rc.BucketEndpoint, _ = headerField(r, "bucket_endpoint")
 
-	bucketName, exists := headerField(r, "bucket_name")
+	rc.BucketName, exists = headerField(r, "bucket_name")
 	if !exists {
 		writeErr(w, "bucket_name not specified")
 		return
 	}
 
-	bucketRegion, exists := headerField(r, "bucket_region")
+	rc.BucketRegion, exists = headerField(r, "bucket_region")
 	if !exists {
 		writeErr(w, "bucket_region not specified")
 		return
 	}
 
-	fileAccess, exists := headerField(r, "file_access")
+	rc.FileAccess, exists = headerField(r, "file_access")
 	if !exists {
 		writeErr(w, "file_access not specified")
 		return
 	}
 
-	fileFormat, exists := headerField(r, "file_format")
+	rc.FileFormat, exists = headerField(r, "file_format")
 	if !exists {
-		fileFormat = "[id]/[year]-[month]/[device]/[when]"
+		rc.FileFormat = "[id]/[year]-[month]/[device]/[when]"
 	}
 
-	fileName, exists := headerField(r, "file_name")
+	rc.FileName, exists = headerField(r, "file_name")
 	if !exists {
 		writeErr(w, "file_name not specified")
 		return
 	}
 
-	keyID, exists := headerField(r, "key_id")
+	rc.KeyID, exists = headerField(r, "key_id")
 	if !exists {
 		writeErr(w, "key_id not specified")
 		return
 	}
-	keySecret, exists := headerField(r, "key_secret")
+	rc.KeySecret, exists = headerField(r, "key_secret")
 	if !exists {
 		writeErr(w, "key_secret not specified")
 		return
 	}
 
-	// Debug
-	fmt.Printf("archiveID:%s archiveMins:%d bucketEndpoint:%s bucketName:%s bucketRegion:%s fileAccess:%s fileFormat:%s fileName:%s keyID:%s keySecret:%s\n%s\n\n", archiveID, archiveMins, bucketEndpoint, bucketName, bucketRegion, fileAccess, fileFormat, fileName, keyID, keySecret, string(eventJSON))
+	// Atomically write configuration to a config file
+	rcJSON, err := note.JSONMarshal(rc)
+	if err != nil {
+		fmt.Printf("error marshaling route config: %s\n", err)
+	} else {
+		tempFile := uuid.New().String() + ".temp"
+		tempPath := configDataPath(rc.ArchiveID) + tempFile
+		err := os.WriteFile(tempPath, rcJSON, 0644)
+		if err != nil {
+			fmt.Printf("error writing route config to %s: %s\n", tempPath, err)
+		} else {
+			filePath := configDataPath(rc.ArchiveID) + instanceRouteConfigFile
+			err = os.Rename(tempPath, filePath)
+			if err != nil {
+				fmt.Printf("error renaming %s to %s\n", tempPath, filePath)
+			}
+		}
+	}
+
+	// Write the event in an atomic way
+	filePath := fmt.Sprintf("%s%s%d", configDataPath(rc.ArchiveID), instanceIncomingEvents, time.Now().UnixNano())
+	err = os.WriteFile(filePath, eventJSON, 0644)
+	if err != nil {
+		fmt.Printf("error writing %s: %d\n", filePath, eventJSON)
+	}
 
 	// Done
-	w.Write([]byte("I'm watching you."))
+	w.Write([]byte("{}"))
 
 }
 

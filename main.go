@@ -19,7 +19,7 @@ var configDataDirectory = ""
 func main() {
 
 	// Read creds
-	ServiceReadConfig()
+	configLoad()
 
 	// Compute folder location
 	configDataDirectory = os.Getenv("HOME") + configDataDirectoryBase
