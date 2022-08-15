@@ -141,7 +141,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := fmt.Sprintf("%s%s%d", configDataPath(rc.ArchiveID), instanceIncomingEvents, time.Now().UnixNano())
 	err = os.WriteFile(filePath, eventJSON, 0644)
 	if err != nil {
-		fmt.Printf("error writing %s: %d\n", filePath, eventJSON)
+		fmt.Printf("error writing %s: %s\n", filePath, err)
 	}
 
 	// Done
