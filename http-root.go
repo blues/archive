@@ -149,7 +149,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	bucketKey := fmt.Sprintf("%s %d%06d.json", rc.FileFolder, left, right)
 	bucketKey = strings.ReplaceAll(bucketKey, "/", " ")
 	bucketKey = strings.ReplaceAll(bucketKey, "\\", " ")
-	deviceClean := strings.Trim(event.DeviceUID, "dev:")
+	deviceClean := strings.TrimPrefix(event.DeviceUID, "dev:")
 	deviceClean = strings.ReplaceAll(deviceClean, ":", "-")
 	bucketKey = strings.ReplaceAll(bucketKey, "[device]", deviceClean)
 	bucketKey = strings.ReplaceAll(bucketKey, "[file]", event.NotefileID)
