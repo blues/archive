@@ -149,14 +149,9 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	bucketKey := fmt.Sprintf("%s %d%06d.json", rc.FileFolder, left, right)
 	bucketKey = strings.ReplaceAll(bucketKey, "/", " ")
 	bucketKey = strings.ReplaceAll(bucketKey, "\\", " ")
-	fmt.Printf("OZZIE1: '%s'\n", event.DeviceUID)
 	deviceClean := strings.TrimPrefix(event.DeviceUID, "dev:")
-	fmt.Printf("OZZIE2: '%s'\n", deviceClean)
 	deviceClean = strings.ReplaceAll(deviceClean, ":", "-")
-	fmt.Printf("OZZIE3: '%s'\n", deviceClean)
-	fmt.Printf("OZZIE4: '%s'\n", bucketKey)
 	bucketKey = strings.ReplaceAll(bucketKey, "[device]", deviceClean)
-	fmt.Printf("OZZIE5: '%s'\n", bucketKey)
 	bucketKey = strings.ReplaceAll(bucketKey, "[file]", event.NotefileID)
 	receivedTime := time.Unix(0, 1000*int64(event.Received*1000000))
 	s = fmt.Sprintf("%04d", receivedTime.Year())
@@ -188,7 +183,10 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 
 // Clean comments out of the specified field
 func headerField(r *http.Request, fieldName string) (out string, exists bool) {
-	s1 := r.Header.Get(fieldName)
+	s1, err := url.PathUnescape(r.Header.Get(fieldName))
+	if err != nil {
+		s1 = r.Header.Get(fieldName)
+	}
 	s2 := strings.TrimSpace(strings.Split(s1, " ")[0])
 	return s2, s2 != ""
 }
