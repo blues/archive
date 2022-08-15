@@ -22,6 +22,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	// Get parameters from the request header, validating as we go along
 	parsedURL, _ := url.Parse(r.RequestURI)
 	target := path.Base(parsedURL.Path)
+	fmt.Printf("OZZIE\n")
 	if target == "favicon.ico" {
 		return
 	}
