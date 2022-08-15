@@ -150,6 +150,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	bucketKey = strings.ReplaceAll(bucketKey, "/", " ")
 	bucketKey = strings.ReplaceAll(bucketKey, "\\", " ")
 	deviceClean := strings.TrimPrefix(event.DeviceUID, "dev:")
+	fmt.Printf("OZZIE0: %s\n", bucketKey)
 	fmt.Printf("OZZIE1: %s '%s'\n", event.DeviceUID, deviceClean)
 	deviceClean = strings.ReplaceAll(deviceClean, ":", "-")
 	fmt.Printf("OZZIE deviceClean: %s\n", deviceClean)
