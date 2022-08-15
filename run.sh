@@ -5,7 +5,7 @@
 # we are executing this one that is perpetually in-use.
 
 # Make sure we're in the right directory, which is necessary via cron
-cd ~/notehub-watch
+cd ~/archive
 
 # Loop forever
 while [ : ]; do

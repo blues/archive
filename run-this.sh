@@ -13,4 +13,4 @@ git pull
 go get
 go build
 
-sudo ./notehub-watch
+sudo ./archive
