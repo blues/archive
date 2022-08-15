@@ -28,8 +28,11 @@ func main() {
 	// Spawn the console input handler
 	go inputHandler()
 
-	// Init our web request inbound server
+	// Init our web request server, which files requests in Incoming
 	go HTTPInboundHandler(":80")
+
+	// Init our classifier, which periodically files requests into folders
+	go classifyHandler()
 
 	// Housekeeping
 	for {

@@ -102,6 +102,10 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	if !exists {
 		rc.FileFormat = "[id]/[year]-[month]/[device]/[when]"
 	}
+	if strings.Contains(rc.FileFormat, " ") {
+		writeErr(w, "file_format may not contain a space character")
+		return
+	}
 
 	rc.FileFolder, exists = headerField(r, "file_folder")
 	if !exists {
@@ -139,8 +143,34 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Generate the key name for this event
+	left := int(event.Received)
+	right := int((event.Received - float64(left)) * 1000000)
+	bucketKey := fmt.Sprintf("%s %d%06d.json", rc.FileFolder, left, right)
+	bucketKey = strings.ReplaceAll(bucketKey, "/", " ")
+	bucketKey = strings.ReplaceAll(bucketKey, "\\", " ")
+	deviceClean := strings.Trim(event.DeviceUID, "dev:")
+	deviceClean = strings.ReplaceAll(deviceClean, ":", "-")
+	bucketKey = strings.ReplaceAll(bucketKey, "[device]", deviceClean)
+	bucketKey = strings.ReplaceAll(bucketKey, "[file]", event.NotefileID)
+	receivedTime := time.Unix(0, 1000*int64(event.Received*1000000))
+	s = fmt.Sprintf("%04d", receivedTime.Year())
+	bucketKey = strings.ReplaceAll(bucketKey, "[year]", s)
+	s = fmt.Sprintf("%02d", receivedTime.Month())
+	bucketKey = strings.ReplaceAll(bucketKey, "[month]", s)
+	s = fmt.Sprintf("%02d", receivedTime.Day())
+	bucketKey = strings.ReplaceAll(bucketKey, "[day]", s)
+	s = fmt.Sprintf("%02d", receivedTime.Hour())
+	bucketKey = strings.ReplaceAll(bucketKey, "[hour]", s)
+	s = fmt.Sprintf("%02d", receivedTime.Minute())
+	bucketKey = strings.ReplaceAll(bucketKey, "[minute]", s)
+	s = fmt.Sprintf("%02d", receivedTime.Second())
+	bucketKey = strings.ReplaceAll(bucketKey, "[second]", s)
+	s = fmt.Sprintf("%02d", (receivedTime.YearDay()-1)/7+1)
+	bucketKey = strings.ReplaceAll(bucketKey, "[weeknum]", s)
+
 	// Write the event in an atomic way
-	filePath := fmt.Sprintf("%s%d", configDataPath(rc.ArchiveID+instanceIncomingEvents), time.Now().UnixNano())
+	filePath := configDataPath(rc.ArchiveID+instanceIncomingEvents) + bucketKey
 	err = os.WriteFile(filePath, eventJSON, 0644)
 	if err != nil {
 		fmt.Printf("error writing %s: %s\n", filePath, err)

@@ -3,3 +3,9 @@
 // copyright holder including that found in the LICENSE file.
 
 package main
+
+import "time"
+
+func classifyHandler() {
+	time.Sleep(1 * time.Second)
+}
