@@ -57,7 +57,14 @@ Others still may want a top-level folder with the Archive ID, so they can archiv
 
 This HTTP header field enables you to configure the layout of your folder by providing a template, such as "[id]/[year]-[month]/[device]".  You can arrange this herarchy any way you wish, using the characters that are valid in S3 bucket keys.  The square bracket keywords are substituted as follows:
 
-#### [device] asdf adf
+#### [device]
+asdfasdf
+asdf
+
+#### [device]
+asdfasdf
+asdf
+
 
 ### file_format
 
