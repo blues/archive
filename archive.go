@@ -85,6 +85,7 @@ func performArchive(archiveID string) {
 	prevFolder := ""
 	prevFiles := []string{}
 	prevTime := int64(0)
+	lastTime := int64(0)
 
 	// Accumulate filenames for a given folder
 	for _, filename := range filenames {
@@ -104,11 +105,13 @@ func performArchive(archiveID string) {
 		if prevFolder == "" {
 			prevFolder = thisFolder
 			prevTime = thisTime
+			lastTime = thisTime
 		}
 
 		// If this is the same as the previous folder, just add the filename to the list
 		if prevFolder == thisFolder {
 			prevFiles = append(prevFiles, filename)
+			lastTime = thisTime
 			continue
 		}
 
@@ -135,7 +138,8 @@ func performArchive(archiveID string) {
 		}
 
 		// We have a different folder, so process it
-		fmt.Printf("archive: %s '%s' (%d events)\n", rc.ArchiveID, prevFolder, len(prevFiles))
+		archiveBucketKey := fmt.Sprintf("%d-%d-%d.json", prevTime, lastTime, len(prevFiles))
+		fmt.Printf("archive: %s %s\n", rc.ArchiveID, archiveBucketKey)
 		/* DO THE ARCHIVE */
 
 		// Move on to the next folder
@@ -144,6 +148,7 @@ func performArchive(archiveID string) {
 		}
 		prevFolder = thisFolder
 		prevTime = thisTime
+		lastTime = int64(0)
 		prevFiles = []string{filename}
 
 	}

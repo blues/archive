@@ -77,10 +77,18 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	if rc.ArchiveEveryMins <= 0 {
 		rc.ArchiveEveryMins = 1440
 	}
+	if rc.ArchiveEveryMins > 10080 {
+		writeErr(w, "maximum minutes per file is 10080 (1 week)")
+		return
+	}
 	s, _ = headerField(r, "archive_when_count_exceeds_mins")
 	rc.ArchiveCountExceeds, _ = strconv.Atoi(s)
 	if rc.ArchiveCountExceeds <= 0 {
 		rc.ArchiveCountExceeds = 1000
+	}
+	if rc.ArchiveCountExceeds > 10000 {
+		writeErr(w, "maximum count of events per file is 10000")
+		return
 	}
 
 	rc.BucketEndpoint, _ = headerField(r, "bucket_endpoint")
@@ -105,7 +113,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 
 	rc.FileFormat, exists = headerField(r, "file_format")
 	if !exists {
-		rc.FileFormat = "[id]/[year]-[month]/[device]/[when]"
+		rc.FileFormat = "[id]/[year]-[month]"
 	}
 	if strings.Contains(rc.FileFormat, " ") {
 		writeErr(w, "file_format may not contain a space character")
@@ -157,6 +165,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	// Generate the key name for this event
 	bucketKey := fmt.Sprintf("%s/%d", rc.FileFolder, receivedUs)
 	bucketKey = strings.ReplaceAll(bucketKey, "[file]", event.NotefileID)
+	bucketKey = strings.ReplaceAll(bucketKey, "[id]", rc.ArchiveID)
 	receivedTime := time.Unix(0, 1000*receivedUs)
 	s = fmt.Sprintf("%04d", receivedTime.Year())
 	bucketKey = strings.ReplaceAll(bucketKey, "[year]", s)
