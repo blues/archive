@@ -39,13 +39,14 @@ func archiveHandler() {
 func performArchive(archiveID string) {
 
 	// Read all events pending for the archive
-	dataDir, _ := os.Open(configDataPath(""))
-	archiveEventFiles, err := dataDir.ReadDir(0)
-	dataDir.Close()
-	if err == nil {
-		for _, archiveEventFile := range archiveEventFiles {
-			performArchive(archiveEventFile.Name())
+	/*	dataDir, _ := os.Open(configDataPath(""))
+		archiveEventFiles, err := dataDir.ReadDir(0)
+		dataDir.Close()
+		if err == nil {
+			for _, archiveEventFile := range archiveEventFiles {
+				//			performArchive(archiveEventFile.Name())
+			}
 		}
-	}
+	*/
 
 }
