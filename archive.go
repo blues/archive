@@ -233,6 +233,7 @@ func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err er
 		}
 	}
 
+	fmt.Printf("OZZIE1: %d\n", len(outBytes))
 	// Upload bytes to S3
 	bucket := aws.String(rc.BucketName)
 	key := aws.String(bucketKey)
@@ -242,14 +243,17 @@ func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err er
 		Region:           aws.String(rc.BucketRegion),
 		S3ForcePathStyle: aws.Bool(true),
 	}
+	fmt.Printf("OZZIE2\n")
 	newSession, err := session.NewSession(s3Config)
 	if err != nil {
 		return fmt.Errorf("error creating session: %s", err)
 	}
+	fmt.Printf("OZZIE3\n")
 	s3Client := s3.New(newSession)
 	cparams := &s3.CreateBucketInput{
 		Bucket: bucket,
 	}
+	fmt.Printf("OZZIE4\n")
 	_, err = s3Client.CreateBucket(cparams)
 	if err != nil {
 		return fmt.Errorf("error creating bucket: %s", err)
@@ -259,10 +263,12 @@ func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err er
 		Bucket: bucket,
 		Key:    key,
 	}
+	fmt.Printf("OZZIE5\n")
 	_, err = s3Client.PutObject(puparams)
 	if err != nil {
 		return fmt.Errorf("err uploading object: %s", err)
 	}
+	fmt.Printf("OZZIE6\n")
 
 	// Done
 	return
