@@ -138,8 +138,8 @@ func performArchive(archiveID string) {
 		}
 
 		// We have a different folder, so process it
-		archiveBucketKey := fmt.Sprintf("%d-%d-%d.json", prevTime, lastTime, len(prevFiles))
-		fmt.Printf("archive: %s %s\n", rc.ArchiveID, archiveBucketKey)
+		archiveBucketKey := fmt.Sprintf("%s/%d-%d-%d.json", strings.ReplaceAll(prevFolder, " ", "/"), prevTime, lastTime, len(prevFiles))
+		fmt.Printf("archive: %s\n", archiveBucketKey)
 		/* DO THE ARCHIVE */
 
 		// Move on to the next folder
