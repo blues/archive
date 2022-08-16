@@ -86,8 +86,8 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	if rc.ArchiveCountExceeds <= 0 {
 		rc.ArchiveCountExceeds = 1000
 	}
-	if rc.ArchiveCountExceeds > 10000 {
-		writeErr(w, "maximum count of events per file is 10000")
+	if rc.ArchiveCountExceeds > 25000 {
+		writeErr(w, "maximum count of events per file is 25000")
 		return
 	}
 
