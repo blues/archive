@@ -57,28 +57,85 @@ Others still may want a top-level folder with the Archive ID, so they can archiv
 
 This HTTP header field enables you to configure the layout of your folder by providing a template, such as "[id]/[year]-[month]/[device]".  You can arrange this herarchy any way you wish, using the characters that are valid in S3 bucket keys.  The square bracket keywords are substituted as follows:
 
-#### [device]
-asdfasdf
-asdf
+#### [id]
+This route's Archive ID.
 
 #### [device]
-asdfasdf
-asdf
+The device's Device UID.
 
+#### [product]
+The device's Product UID.
+
+#### [sn]
+The device's Serial Number.
+
+#### [file]
+The event's Notefile ID.
+
+#### [year]
+The four digit year that the event was Received.
+
+#### [month]
+The two digit month (1-based) that the event was Received.
+
+#### [day]
+The two digit day (1-based) that the event was Received.
+
+#### [hour]
+The two digit hour (0-based, 24-hour clock) that the event was Received.
+
+#### [weeknum]
+The two digit week (1-based) of the year that the event was Received
 
 ### file_format
 
+When a file is uploaded to S3, its filename is AAAAAAAAAAAAAAAA-BBBBBBBBBBBBBBBB-CCC.json, where AAA is the Received timeof the first Event in the file, encoded in unix epoch microseconds, BBB is the Received time of the last Event in the file, and CCC is the number of events encoded in the file.
+
+Using this HTTP Header variable, you may configure one of three data formats for the group of events stored in the JSON file:
+
+#### array
+
+This format is a JSON array of all the objects within the file, such as
+```[
+  {event1},
+  {event2},
+  {event3}
+]```
+
+#### object:myfieldname
+
+This format is a JSON array of all the objects within the file, placed underneath a high level object such as
+```{
+  myfieldname:[
+    {event1},
+    {event2},
+    {event3}
+  ]
+]```
+
+#### ndjson
+
+This format, known as "Newline-Delimited JSON" (see http://ndjson.org) has one JSON Event per line, delimited with the "\n" character.
 
 ### bucket_endpoint
 
-### bucket_name
+This is the endpoint for the S3 service to be called.  For AWS, it can be ommitted or set to "(default)", whereas for B2 it might be set to something like  "s3.us-west-001.backblazeb2.com" as instructed by Backblaze.
 
 ### bucket_region
 
+This is the region of your S3 service, such as "us-east-1" or "us-west-001".
+
+### bucket_name
+
+This is the name of the bucket you created in your S3 service.
+
 ### key_id
+
+This is the Identifier portion of the Secret Access Key, such as AKIASL5UXI756LWKJU45
 
 ### key_secret
 
+This is the Secret portion of the Secret Access Key, such as hxN6RPv7nKCn72ptdCV2BcTbIynxCgCr042vA2Zl
 
 
 ## Security
