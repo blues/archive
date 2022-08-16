@@ -168,15 +168,12 @@ S3 (or equivalent) authentication is based upon "Secret Access Keys".  The SAK, 
 5. In the Permissions section, choose "Attach existing policies directly", and select your "my-event-archive" policy
 6. Create the user.  At that point, you will be show the Access Key's ID and the Secret for the key.  You'll use these when configuring the Route
 
-
-
-
 ## To learn more about Blues Wireless, the Notehub, S3, and B2, see:
 
-https://blues.com
-https://notehub.io
-https://aws.amazon.com/pm/serv-s3
-https://www.backblaze.com/b2/cloud-storage.html
+* https://blues.com
+* https://notehub.io
+* https://aws.amazon.com/pm/serv-s3
+* https://www.backblaze.com/b2/cloud-storage.html
 
 ## License
 
