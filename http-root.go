@@ -148,12 +148,12 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Compute the int64 received date in a way that doesn't exceed float64 digits
-	received := (int64(event.Received) * 1000000) + (int64(event.Received-float64(int64(event.Received))) * 1000000)
+	receivedUs := receivedAsInt64(event.Received)
 
 	// Generate the key name for this event
-	bucketKey := fmt.Sprintf("%s %d", rc.FileFolder, received)
+	bucketKey := fmt.Sprintf("%s/%d", rc.FileFolder, receivedUs)
 	bucketKey = strings.ReplaceAll(bucketKey, "[file]", event.NotefileID)
-	receivedTime := time.Unix(0, 1000*int64(event.Received*1000000))
+	receivedTime := time.Unix(0, 1000*receivedUs)
 	s = fmt.Sprintf("%04d", receivedTime.Year())
 	bucketKey = strings.ReplaceAll(bucketKey, "[year]", s)
 	s = fmt.Sprintf("%02d", receivedTime.Month())
@@ -188,6 +188,12 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	// Done
 	w.Write([]byte("{}"))
 
+}
+
+// Safely convert a floating received date/time to int64
+func receivedAsInt64(received float64) int64 {
+	i64, _ := strconv.ParseInt(strings.ReplaceAll(fmt.Sprintf("%.6f", received), ".", ""), 10, 0)
+	return i64
 }
 
 // Clean comments out of the specified field
