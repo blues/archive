@@ -147,6 +147,7 @@ func performArchive(archiveID string) {
 		err = uploadArchive(rc, archiveBucketKey, prevFiles)
 		errFilePath := configDataPath(rc.ArchiveID) + instanceRouteErrorFile
 		if err != nil {
+			fmt.Printf("error uploading to %s: %s\n", rc.ArchiveID, err)
 			errBytes := []byte(err.Error())
 			tempFile := uuid.New().String() + ".temp"
 			tempPath := configDataPath(rc.ArchiveID) + tempFile
@@ -233,7 +234,6 @@ func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err er
 		}
 	}
 
-	fmt.Printf("OZZIE1: %d\n", len(outBytes))
 	// Upload bytes to S3
 	bucket := aws.String(rc.BucketName)
 	key := aws.String(bucketKey)
@@ -243,34 +243,24 @@ func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err er
 		Region:           aws.String(rc.BucketRegion),
 		S3ForcePathStyle: aws.Bool(true),
 	}
-	fmt.Printf("OZZIE2\n")
 	newSession, err := session.NewSession(s3Config)
 	if err != nil {
 		return fmt.Errorf("error creating session: %s", err)
 	}
-	fmt.Printf("OZZIE3\n")
 	s3Client := s3.New(newSession)
 	cparams := &s3.CreateBucketInput{
 		Bucket: bucket,
 	}
-	fmt.Printf("OZZIE4\n")
-	_, err = s3Client.CreateBucket(cparams)
-	if err != nil {
-		if !strings.Contains(err.Error(), "BucketAlreadyOwnedByYou") {
-			return fmt.Errorf("error creating bucket: %s", err)
-		}
-	}
+	s3Client.CreateBucket(cparams)
 	puparams := &s3.PutObjectInput{
 		Body:   strings.NewReader(string(outBytes)),
 		Bucket: bucket,
 		Key:    key,
 	}
-	fmt.Printf("OZZIE5\n")
 	_, err = s3Client.PutObject(puparams)
 	if err != nil {
 		return fmt.Errorf("err uploading object: %s", err)
 	}
-	fmt.Printf("OZZIE6\n")
 
 	// Done
 	return
