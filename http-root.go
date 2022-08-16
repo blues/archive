@@ -223,6 +223,9 @@ func headerField(r *http.Request, fieldName string) (out string, exists bool) {
 		s1 = r.Header.Get(fieldName)
 	}
 	s2 := strings.TrimSpace(strings.Split(s1, " ")[0])
+	if strings.HasPrefix(s2, "(") {
+		s2 = ""
+	}
 	return s2, s2 != ""
 }
 
