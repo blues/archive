@@ -4,29 +4,8 @@
 
 package main
 
-import (
-	"os"
-	"time"
-)
-
-// Directory that will be used for data
-const configDataDirectoryBase = "/data/"
-
-// Fully-resolved data directory
-var configDataDirectory = ""
-
 // Main service entry point
 func main() {
-
-	// Read creds
-	configLoad()
-
-	// Compute folder location
-	configDataDirectory = os.Getenv("HOME") + configDataDirectoryBase
-	_ = configDataDirectory
-
-	// Spawn the console input handler
-	go inputHandler()
 
 	// Init our archive task, which periodically files requests into folders.
 	// Note that this must be initialized before HTTP handlers because of
@@ -36,9 +15,7 @@ func main() {
 	// Init our web request server, which files requests in Incoming
 	go HTTPInboundHandler(":80")
 
-	// Housekeeping
-	for {
-		time.Sleep(1 * time.Minute)
-	}
+	// Handle console input
+	inputHandler()
 
 }
