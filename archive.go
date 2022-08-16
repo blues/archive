@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -51,58 +52,62 @@ func archiveHandler() {
 func performArchive(archiveID string) {
 	var rc RouteConfig
 
-	// Number of directory entries to process at a time
-	chunkLen := 1
-
 	// This loop assumes that directory entries come back in sorted order,
 	// and performs work when there is a transition to the next folder.
 	//	prevFolder := ""
 	//	prevFiles := []string{}
 	//	prevTime := int64(0)
 
-	// Loop over directory entries
+	// First, to save memory because file descriptors are large, gather directory
+	// entries incrementally as a string array, and then sort the array.
 	dataDir, err := os.Open(configDataPath(archiveID + instanceIncomingEvents))
 	if err != nil {
 		fmt.Printf("can't open incoming events for %s: %s\n", archiveID, err)
 		return
 	}
+	filenames := []string{}
 	for {
-		files, err := dataDir.ReadDir(chunkLen)
-		if err != nil || len(files) == 0 {
+		files, err := dataDir.ReadDir(1)
+		if err != nil {
 			break
 		}
 		for _, file := range files {
-
-			// Parse the filename into folder and time
-			filename := file.Name()
-			index := strings.LastIndex(filename, " ")
-			if index == -1 {
-				continue
-			}
-			thisFolder := filename[:index]
-			thisTime, _ := strconv.ParseInt(filename[index+1:], 10, 0)
-			if thisTime == 0 {
-				continue
-			}
-
-			// Read the route config if it hasn't yet been read
-			if rc.ArchiveID == "" {
-				rcJSON, err := os.ReadFile(configDataPath(archiveID) + instanceRouteConfigFile)
-				if err != nil {
-					fmt.Printf("can't read %s config file: %s\n", archiveID, err)
-					continue
-				}
-				err = note.JSONUnmarshal(rcJSON, &rc)
-				if err != nil {
-					continue
-				}
-			}
-
-			// If this is the same as the previous folder, just add the filename to the list
-			fmt.Printf("%s %s %s %d\n", rc.ArchiveID, filename, thisFolder, thisTime)
-
+			filenames = append(filenames, file.Name())
 		}
 	}
 	dataDir.Close()
+	sort.Strings(filenames)
+
+	// Next, iterate over the sorted filenames
+	for _, filename := range filenames {
+
+		// Parse the filename into folder and time
+		index := strings.LastIndex(filename, " ")
+		if index == -1 {
+			continue
+		}
+		thisFolder := filename[:index]
+		thisTime, _ := strconv.ParseInt(filename[index+1:], 10, 0)
+		if thisTime == 0 {
+			continue
+		}
+
+		// Read the route config if it hasn't yet been read
+		if rc.ArchiveID == "" {
+			rcJSON, err := os.ReadFile(configDataPath(archiveID) + instanceRouteConfigFile)
+			if err != nil {
+				fmt.Printf("can't read %s config file: %s\n", archiveID, err)
+				continue
+			}
+			err = note.JSONUnmarshal(rcJSON, &rc)
+			if err != nil {
+				continue
+			}
+		}
+
+		// If this is the same as the previous folder, just add the filename to the list
+		fmt.Printf("%s %s %s %d\n", rc.ArchiveID, filename, thisFolder, thisTime)
+
+	}
 
 }
