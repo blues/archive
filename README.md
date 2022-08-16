@@ -112,7 +112,8 @@ This format is a JSON array of all the objects within the file, placed underneat
     {event2},
     {event3}
   ]
-]```
+]
+```
 
 #### ndjson
 
@@ -157,7 +158,8 @@ S3 (or equivalent) authentication is based upon "Secret Access Keys".  The SAK, 
             "Resource": "arn:aws:s3:::my-event-archive/*"
         }
     ]
-}```
+}
+```
 3. Open the IAM console, and click Users
 4. Click Add User, choose a new IAM user name, and select Access Key as the credential type
 5. In the Permissions section, choose "Attach existing policies directly", and select your "my-event-archive" policy
