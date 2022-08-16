@@ -81,7 +81,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, "maximum minutes per file is 10080 (1 week)")
 		return
 	}
-	s, _ = headerField(r, "archive_when_count_exceeds_mins")
+	s, _ = headerField(r, "archive_count_exceeds")
 	rc.ArchiveCountExceeds, _ = strconv.Atoi(s)
 	if rc.ArchiveCountExceeds <= 0 {
 		rc.ArchiveCountExceeds = 1000
