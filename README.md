@@ -100,7 +100,8 @@ This format is a JSON array of all the objects within the file, such as
   {event1},
   {event2},
   {event3}
-]```
+]
+```
 
 #### object:myfieldname
 
