@@ -96,7 +96,8 @@ Using this HTTP Header variable, you may configure one of three data formats for
 #### array
 
 This format is a JSON array of all the objects within the file, such as
-```[
+```
+[
   {event1},
   {event2},
   {event3}
@@ -106,7 +107,8 @@ This format is a JSON array of all the objects within the file, such as
 #### object:myfieldname
 
 This format is a JSON array of all the objects within the file, placed underneath a high level object such as
-```{
+```
+{
   myfieldname:[
     {event1},
     {event2},
@@ -147,7 +149,8 @@ This archiving solution is written with no authentication, and requires no expli
 S3 (or equivalent) authentication is based upon "Secret Access Keys".  The SAK, when configured, will be 'in the clear' in the Route, and so it is important when setting up the access keys that you create a user/key that *only* has permission to Upload to the S3 bucket to which data is being uploaded.  For example, in AWS this involves:
 1. Open the IAM console and click Policies
 2. Select to Create a new Customer-Managed Policy such as "my-event-archive, with the {}JSON that is:
-```{
+```
+{
     "Version": "2012-10-17",
     "Statement": [
         {
