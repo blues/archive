@@ -52,12 +52,6 @@ func archiveHandler() {
 func performArchive(archiveID string) {
 	var rc RouteConfig
 
-	// This loop assumes that directory entries come back in sorted order,
-	// and performs work when there is a transition to the next folder.
-	//	prevFolder := ""
-	//	prevFiles := []string{}
-	//	prevTime := int64(0)
-
 	// First, to save memory because file descriptors are large, gather directory
 	// entries incrementally as a string array, and then sort the array.
 	dataDir, err := os.Open(configDataPath(archiveID + instanceIncomingEvents))
@@ -72,13 +66,27 @@ func performArchive(archiveID string) {
 			break
 		}
 		for _, file := range files {
-			filenames = append(filenames, file.Name())
+			filename := file.Name()
+			if !strings.HasPrefix(filename, ".") {
+				filenames = append(filenames, filename)
+			}
 		}
 	}
 	dataDir.Close()
 	sort.Strings(filenames)
+	if len(filenames) == 0 {
+		return
+	}
+
+	// Append a special filename to ensure that we terminate cleanly
+	filenames = append(filenames, "completed -1")
 
 	// Next, iterate over the sorted filenames
+	prevFolder := ""
+	prevFiles := []string{}
+	prevTime := int64(0)
+
+	// Accumulate filenames for a given folder
 	for _, filename := range filenames {
 
 		// Parse the filename into folder and time
@@ -105,8 +113,28 @@ func performArchive(archiveID string) {
 			}
 		}
 
+		// Special case for the first folder
+		if prevFolder == "" {
+			prevFolder = thisFolder
+			prevTime = thisTime
+		}
+
 		// If this is the same as the previous folder, just add the filename to the list
-		fmt.Printf("%s %s %s %d\n", rc.ArchiveID, filename, thisFolder, thisTime)
+		if prevFolder == thisFolder {
+			prevFiles = append(prevFiles, filename)
+			continue
+		}
+
+		// We have a different folder, so process it
+		fmt.Printf("%s %d\n%v\n", prevFolder, prevTime, prevFiles)
+
+		// Move on to the next folder
+		if thisTime == -1 {
+			break
+		}
+		prevFolder = thisFolder
+		prevTime = thisTime
+		prevFiles = []string{filename}
 
 	}
 
