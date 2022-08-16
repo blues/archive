@@ -23,18 +23,23 @@ func archiveHandler() {
 	// Initialize the queue
 	archiveIncoming = EventNew()
 
-	// Read all archive IDs
-	dataDir, _ := os.Open(configDataPath(""))
-	archiveIDFiles, err := dataDir.ReadDir(0)
-	dataDir.Close()
-	if err == nil {
-		for _, archiveIDFile := range archiveIDFiles {
-			performArchive(archiveIDFile.Name())
-		}
-	}
+	// Loop, performing archives
+	for {
 
-	// Wait until something comes in
-	archiveIncoming.Wait(time.Duration(1) * time.Hour)
+		// Read all archive IDs
+		dataDir, _ := os.Open(configDataPath(""))
+		archiveIDFiles, err := dataDir.ReadDir(0)
+		dataDir.Close()
+		if err == nil {
+			for _, archiveIDFile := range archiveIDFiles {
+				performArchive(archiveIDFile.Name())
+			}
+		}
+
+		// Wait until something comes in
+		archiveIncoming.Wait(time.Duration(1) * time.Hour)
+
+	}
 
 }
 
