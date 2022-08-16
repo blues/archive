@@ -100,6 +100,18 @@ func performArchive(archiveID string) {
 			continue
 		}
 
+		// Special case for the first folder
+		if prevFolder == "" {
+			prevFolder = thisFolder
+			prevTime = thisTime
+		}
+
+		// If this is the same as the previous folder, just add the filename to the list
+		if prevFolder == thisFolder {
+			prevFiles = append(prevFiles, filename)
+			continue
+		}
+
 		// Read the route config if it hasn't yet been read
 		if rc.ArchiveID == "" {
 			rcJSON, err := os.ReadFile(configDataPath(archiveID) + instanceRouteConfigFile)
@@ -113,20 +125,18 @@ func performArchive(archiveID string) {
 			}
 		}
 
-		// Special case for the first folder
-		if prevFolder == "" {
-			prevFolder = thisFolder
-			prevTime = thisTime
-		}
-
-		// If this is the same as the previous folder, just add the filename to the list
-		if prevFolder == thisFolder {
-			prevFiles = append(prevFiles, filename)
+		// If the time has expired OR the count is excessive, do it
+		nowUs := time.Now().UnixNano() / 1000
+		elapsedMins := ((nowUs - prevTime) / 1000000) / 60
+		if elapsedMins < int64(rc.ArchiveEveryMins) && len(prevFiles) < rc.ArchiveCountExceeds {
+			fmt.Printf("archive: %s folder '%s' is %d mins old and has %d events (will archive at %d mins or %d events)\n",
+				rc.ArchiveID, prevFolder, elapsedMins, len(prevFiles), rc.ArchiveEveryMins, rc.ArchiveCountExceeds)
 			continue
 		}
 
 		// We have a different folder, so process it
-		fmt.Printf("%s %d\n%v\n", prevFolder, prevTime, prevFiles)
+		fmt.Printf("archive: %s '%s' (%d events)\n", rc.ArchiveID, prevFolder, len(prevFiles))
+		/* DO THE ARCHIVE */
 
 		// Move on to the next folder
 		if thisTime == -1 {
