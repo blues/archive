@@ -21,8 +21,7 @@ import (
 
 // File folders/names
 const instanceRouteConfigFile = "route.json"
-
-//const instanceRouteErrorFile = "error.txt"
+const instanceRouteErrorFile = "error.txt"
 const instanceIncomingEvents = "/incoming/"
 
 // Configuration object
@@ -137,9 +136,7 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		filePath := configDataPath(rc.ArchiveID) + instanceRouteConfigFile
 		existingJSON, err := os.ReadFile(filePath)
-		fmt.Printf("OZZIE: rewrite?\n")
 		if err != nil || string(existingJSON) != string(rcJSON) {
-			fmt.Printf("OZZIE: YES rewrite file\n")
 			tempFile := uuid.New().String() + ".temp"
 			tempPath := configDataPath(rc.ArchiveID) + tempFile
 			err := os.WriteFile(tempPath, rcJSON, 0644)
@@ -191,6 +188,13 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Signal that there's new incoming, to wake up the archiver
 	archiveIncoming.Signal()
+
+	// If a routing error occurred, indicate as such
+	errorMsg, err := os.ReadFile(configDataPath(rc.ArchiveID) + instanceRouteErrorFile)
+	if err == nil {
+		writeErr(w, string(errorMsg))
+		return
+	}
 
 	// Done
 	w.Write([]byte("{}"))
