@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/blues/note-go/note"
 )
 
 // Event indicating that something happened
@@ -30,7 +32,9 @@ func archiveHandler() {
 		dataDir, _ := os.Open(configDataPath(""))
 		archiveIDFiles, err := dataDir.ReadDir(0)
 		dataDir.Close()
-		if err == nil {
+		if err != nil {
+			fmt.Printf("data directory read error: %s\n", err)
+		} else {
 			for _, archiveIDFile := range archiveIDFiles {
 				performArchive(archiveIDFile.Name())
 			}
@@ -45,6 +49,7 @@ func archiveHandler() {
 
 // Process a single archive, by ID
 func performArchive(archiveID string) {
+	var rc RouteConfig
 
 	// Number of directory entries to process at a time
 	chunkLen := 1
@@ -55,7 +60,11 @@ func performArchive(archiveID string) {
 	//	prevTime := int64(0)
 
 	// Loop over directory entries
-	dataDir, _ := os.Open(configDataPath(""))
+	dataDir, err := os.Open(configDataPath(archiveID + instanceIncomingEvents))
+	if err != nil {
+		fmt.Printf("can't open incoming events for %s: %s\n", archiveID, err)
+		return
+	}
 	for {
 		files, err := dataDir.ReadDir(chunkLen)
 		if err != nil || len(files) == 0 {
@@ -74,7 +83,21 @@ func performArchive(archiveID string) {
 			if filetime == 0 {
 				continue
 			}
-			fmt.Printf("%s\n  '%s' %d\n", filename, folder, filetime)
+
+			// Read the route config if it hasn't yet been read
+			if rc.ArchiveID == "" {
+				rcJSON, err := os.ReadFile(configDataPath(archiveID) + instanceRouteConfigFile)
+				if err != nil {
+					fmt.Printf("can't read %s config file: %s\n", archiveID, err)
+					continue
+				}
+				err = note.JSONUnmarshal(rcJSON, &rc)
+				if err != nil {
+					continue
+				}
+			}
+
+			fmt.Printf("%s %s\n  '%s' %d\n", rc.ArchiveID, filename, folder, filetime)
 
 		}
 	}
