@@ -21,6 +21,8 @@ import (
 
 // File folders/names
 const instanceRouteConfigFile = "route.json"
+
+//const instanceRouteErrorFile = "error.txt"
 const instanceIncomingEvents = "/incoming/"
 
 // Configuration object
@@ -128,21 +130,26 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Atomically write configuration to a config file
+	// Atomically write configuration to a config file if it's changed
 	rcJSON, err := note.JSONMarshal(rc)
 	if err != nil {
 		fmt.Printf("error marshaling route config: %s\n", err)
 	} else {
-		tempFile := uuid.New().String() + ".temp"
-		tempPath := configDataPath(rc.ArchiveID) + tempFile
-		err := os.WriteFile(tempPath, rcJSON, 0644)
-		if err != nil {
-			fmt.Printf("error writing route config to %s: %s\n", tempPath, err)
-		} else {
-			filePath := configDataPath(rc.ArchiveID) + instanceRouteConfigFile
-			err = os.Rename(tempPath, filePath)
+		filePath := configDataPath(rc.ArchiveID) + instanceRouteConfigFile
+		existingJSON, err := os.ReadFile(filePath)
+		fmt.Printf("OZZIE: rewrite?\n")
+		if err != nil || string(existingJSON) != string(rcJSON) {
+			fmt.Printf("OZZIE: YES rewrite file\n")
+			tempFile := uuid.New().String() + ".temp"
+			tempPath := configDataPath(rc.ArchiveID) + tempFile
+			err := os.WriteFile(tempPath, rcJSON, 0644)
 			if err != nil {
-				fmt.Printf("error renaming %s to %s\n", tempPath, filePath)
+				fmt.Printf("error writing route config to %s: %s\n", tempPath, err)
+			} else {
+				err = os.Rename(tempPath, filePath)
+				if err != nil {
+					fmt.Printf("error renaming %s to %s\n", tempPath, filePath)
+				}
 			}
 		}
 	}
