@@ -18,7 +18,7 @@ var archiveIncoming *Event
 func archiveHandler() {
 
 	// Initialize the queue
-	archiveIncoming := EventNew()
+	archiveIncoming = EventNew()
 
 	// Read all archive IDs
 	dataDir, _ := os.Open(configDataPath(""))
