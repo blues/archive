@@ -256,7 +256,9 @@ func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err er
 	fmt.Printf("OZZIE4\n")
 	_, err = s3Client.CreateBucket(cparams)
 	if err != nil {
-		return fmt.Errorf("error creating bucket: %s", err)
+		if !strings.Contains(err.Error(), "BucketAlreadyOwnedByYou") {
+			return fmt.Errorf("error creating bucket: %s", err)
+		}
 	}
 	puparams := &s3.PutObjectInput{
 		Body:   strings.NewReader(string(outBytes)),
