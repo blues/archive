@@ -114,7 +114,7 @@ This format is a JSON array of all the objects within the file, placed underneat
     {event2},
     {event3}
   ]
-]
+}
 ```
 
 #### ndjson
