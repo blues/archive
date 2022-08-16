@@ -57,6 +57,7 @@ func performArchive(archiveID string) {
 	// This loop assumes that directory entries come back in sorted order,
 	// and performs work when there is a transition to the next folder.
 	//	prevFolder := ""
+	//	prevFiles := []string{}
 	//	prevTime := int64(0)
 
 	// Loop over directory entries
@@ -78,9 +79,9 @@ func performArchive(archiveID string) {
 			if index == -1 {
 				continue
 			}
-			folder := filename[:index]
-			filetime, _ := strconv.ParseInt(filename[index+1:], 10, 0)
-			if filetime == 0 {
+			thisFolder := filename[:index]
+			thisTime, _ := strconv.ParseInt(filename[index+1:], 10, 0)
+			if thisTime == 0 {
 				continue
 			}
 
@@ -97,7 +98,8 @@ func performArchive(archiveID string) {
 				}
 			}
 
-			fmt.Printf("%s %s\n  '%s' %d\n", rc.ArchiveID, filename, folder, filetime)
+			// If this is the same as the previous folder, just add the filename to the list
+			fmt.Printf("%s %s %s %d\n", rc.ArchiveID, filename, thisFolder, thisTime)
 
 		}
 	}
