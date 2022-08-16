@@ -171,11 +171,12 @@ S3 (or equivalent) authentication is based upon "Secret Access Keys".  The SAK, 
 
 
 
-## To learn more about Blues Wireless, the Notehub, S3, abd B2, see:
-[blues]: https://blues.com
-[notehub]: https://notehub.io
-[s3]: https://aws.amazon.com/pm/serv-s3
-[b2]: https://www.backblaze.com/b2/cloud-storage.html
+## To learn more about Blues Wireless, the Notehub, S3, and B2, see:
+
+https://blues.com
+https://notehub.io
+https://aws.amazon.com/pm/serv-s3
+https://www.backblaze.com/b2/cloud-storage.html
 
 ## License
 
