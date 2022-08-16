@@ -12,6 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/blues/note-go/note"
 	"github.com/google/uuid"
 )
@@ -153,17 +157,14 @@ func performArchive(archiveID string) {
 		} else {
 
 			// Remove the error file
-			fmt.Printf("removing %s\n", errFilePath)
 			os.Remove(errFilePath)
 
-			// Remove the archived files
+			// Remove the successfully-archived files
 			for _, filepath := range prevFiles {
-				if false {
-					os.Remove(filepath)
-				} else {
-					fmt.Printf("removing %s\n", filepath)
-				}
+				os.Remove(filepath)
 			}
+
+			fmt.Printf("archive: %s folder '%s' (%d events) archived\n", rc.ArchiveID, prevFolder, len(prevFiles))
 
 		}
 
@@ -182,6 +183,88 @@ func performArchive(archiveID string) {
 
 // Upload an archive
 func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err error) {
-	fmt.Printf("UPLOAD in %s upload to %s with %d files\n", rc.ArchiveID, bucketKey, len(filepaths))
+
+	// Generate the archive object in-memory
+	useArray := false
+	outArray := []interface{}{}
+	useMap := false
+	outMap := map[string][]interface{}{}
+	outBytes := []byte{}
+	for _, filepath := range filepaths {
+		eventJSON, err := os.ReadFile(filepath)
+		if err != nil {
+			fmt.Printf("error reading %s: %s\n", filepath, err)
+			continue
+		}
+		var event map[string]interface{}
+		err = note.JSONUnmarshal(eventJSON, &event)
+		if err != nil {
+			fmt.Printf("error unmarshaling %s: %s\n", filepath, err)
+			continue
+		}
+
+		// Generate the structure based upon array format
+		if rc.FileFormat == "array" {
+			useArray = true
+			outArray = append(outArray, event)
+		} else if strings.HasPrefix(rc.FileFormat, "object:") {
+			useMap = true
+			fieldName := strings.TrimPrefix(rc.FileFormat, "object:")
+			outMap[fieldName] = append(outMap[fieldName], event)
+		} else if rc.FileFormat == "ndjson" {
+			outBytes = append(outBytes, eventJSON...)
+			outBytes = append(outBytes, []byte("\n")...)
+		} else {
+			return fmt.Errorf("invalid file format: %s", rc.FileFormat)
+		}
+
+	}
+
+	// Unpack into bytes if appropriate
+	if useArray {
+		outBytes, err = note.JSONMarshal(outArray)
+		if err != nil {
+			return fmt.Errorf("can't marshal array: %s", err)
+		}
+	} else if useMap {
+		outBytes, err = note.JSONMarshal(outMap)
+		if err != nil {
+			return fmt.Errorf("can't marshal map: %s", err)
+		}
+	}
+
+	// Upload bytes to S3
+	bucket := aws.String(rc.BucketName)
+	key := aws.String(bucketKey)
+	s3Config := &aws.Config{
+		Credentials:      credentials.NewStaticCredentials(rc.KeyID, rc.KeySecret, ""),
+		Endpoint:         aws.String(rc.BucketEndpoint),
+		Region:           aws.String(rc.BucketRegion),
+		S3ForcePathStyle: aws.Bool(true),
+	}
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return fmt.Errorf("error creating session: %s", err)
+	}
+	s3Client := s3.New(newSession)
+	cparams := &s3.CreateBucketInput{
+		Bucket: bucket,
+	}
+	_, err = s3Client.CreateBucket(cparams)
+	if err != nil {
+		return fmt.Errorf("error creating bucket: %s", err)
+	}
+	puparams := &s3.PutObjectInput{
+		Body:   strings.NewReader(string(outBytes)),
+		Bucket: bucket,
+		Key:    key,
+	}
+	_, err = s3Client.PutObject(puparams)
+	if err != nil {
+		return fmt.Errorf("err uploading object: %s", err)
+	}
+
+	// Done
 	return
+
 }
