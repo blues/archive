@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/blues/note-go/note"
+	"github.com/google/uuid"
 )
 
 // Event indicating that something happened
@@ -110,7 +111,7 @@ func performArchive(archiveID string) {
 
 		// If this is the same as the previous folder, just add the filename to the list
 		if prevFolder == thisFolder {
-			prevFiles = append(prevFiles, filename)
+			prevFiles = append(prevFiles, configDataPath(archiveID+instanceIncomingEvents)+filename)
 			lastTime = thisTime
 			continue
 		}
@@ -137,10 +138,34 @@ func performArchive(archiveID string) {
 			continue
 		}
 
-		// We have a different folder, so process it
+		// Upload the archive, and either set or delete the error file
 		archiveBucketKey := fmt.Sprintf("%s/%d-%d-%d.json", strings.ReplaceAll(prevFolder, " ", "/"), prevTime, lastTime, len(prevFiles))
-		fmt.Printf("archive: %s\n", archiveBucketKey)
-		/* DO THE ARCHIVE */
+		err = uploadArchive(rc, archiveBucketKey, prevFiles)
+		errFilePath := configDataPath(rc.ArchiveID) + instanceRouteErrorFile
+		if err != nil {
+			errBytes := []byte(err.Error())
+			tempFile := uuid.New().String() + ".temp"
+			tempPath := configDataPath(rc.ArchiveID) + tempFile
+			err = os.WriteFile(tempPath, errBytes, 0644)
+			if err == nil {
+				os.Rename(tempPath, errFilePath)
+			}
+		} else {
+
+			// Remove the error file
+			fmt.Printf("removing %s\n", errFilePath)
+			os.Remove(errFilePath)
+
+			// Remove the archived files
+			for _, filepath := range prevFiles {
+				if false {
+					os.Remove(filepath)
+				} else {
+					fmt.Printf("removing %s\n", filepath)
+				}
+			}
+
+		}
 
 		// Move on to the next folder
 		if thisTime == -1 {
@@ -153,4 +178,10 @@ func performArchive(archiveID string) {
 
 	}
 
+}
+
+// Upload an archive
+func uploadArchive(rc RouteConfig, bucketKey string, filepaths []string) (err error) {
+	fmt.Printf("UPLOAD in %s upload to %s with %d files\n", rc.ArchiveID, bucketKey, len(filepaths))
+	return
 }
