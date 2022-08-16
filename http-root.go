@@ -23,8 +23,6 @@ import (
 const instanceRouteConfigFile = "route.json"
 const instanceIncomingEvents = "/incoming/"
 
-//const instanceClassifiedEvents = "/classified/"
-
 // Configuration object
 type RouteConfig struct {
 	ArchiveID           string `json:"archive_id"`
@@ -149,13 +147,11 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Compute the int64 received date in a way that doesn't exceed float64 digits
+	received := (int64(event.Received) * 1000000) + (int64(event.Received-float64(int64(event.Received))) * 1000000)
+
 	// Generate the key name for this event
-	left := int(event.Received)
-	right := int((event.Received - float64(left)) * 1000000)
-	bucketKey := fmt.Sprintf("%s %d%06d.json", rc.FileFolder, left, right)
-	bucketKey = strings.ReplaceAll(bucketKey, "/", " ")
-	bucketKey = strings.ReplaceAll(bucketKey, "\\", " ")
-	bucketKey = strings.ReplaceAll(bucketKey, "dev:", "")
+	bucketKey := fmt.Sprintf("%s %d", rc.FileFolder, received)
 	bucketKey = strings.ReplaceAll(bucketKey, "[file]", event.NotefileID)
 	receivedTime := time.Unix(0, 1000*int64(event.Received*1000000))
 	s = fmt.Sprintf("%04d", receivedTime.Year())
@@ -173,12 +169,21 @@ func inboundWebRootHandler(w http.ResponseWriter, r *http.Request) {
 	s = fmt.Sprintf("%02d", (receivedTime.YearDay()-1)/7+1)
 	bucketKey = strings.ReplaceAll(bucketKey, "[weeknum]", s)
 
+	// Clean to remove characters that are not allowed in a bucket key
+	bucketKey = cleanKey(bucketKey)
+
+	// Substitute slashes with space, which will be restored later
+	bucketKey = strings.ReplaceAll(bucketKey, "/", " ")
+
 	// Write the event in an atomic way
 	filePath := configDataPath(rc.ArchiveID+instanceIncomingEvents) + bucketKey
 	err = os.WriteFile(filePath, eventJSON, 0644)
 	if err != nil {
 		fmt.Printf("error writing %s: %s\n", filePath, err)
 	}
+
+	// Signal that there's new incoming, to wake up the archiver
+	archiveIncoming.Signal()
 
 	// Done
 	w.Write([]byte("{}"))
@@ -198,4 +203,25 @@ func headerField(r *http.Request, fieldName string) (out string, exists bool) {
 // Write an error message as a JSON object
 func writeErr(w http.ResponseWriter, message string) {
 	w.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", message)))
+}
+
+// Clean an S3-compatible bucket key name, allowing subdir sep
+func cleanKey(in string) (out string) {
+	for _, ch := range in {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+			ch == '-' || ch == '!' || ch == '_' || ch == '.' ||
+			ch == '*' || ch == '(' || ch == ')' || ch == '\'' ||
+			ch == '/' {
+			out += string(ch)
+		} else {
+			out += "-"
+		}
+	}
+	if strings.HasPrefix(out, ".") {
+		out = "-" + strings.TrimPrefix(out, ".")
+	}
+	if strings.HasSuffix(out, ".") {
+		out = strings.TrimSuffix(out, ".") + "-"
+	}
+	return
 }

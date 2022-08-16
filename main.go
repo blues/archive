@@ -28,11 +28,13 @@ func main() {
 	// Spawn the console input handler
 	go inputHandler()
 
+	// Init our archive task, which periodically files requests into folders.
+	// Note that this must be initialized before HTTP handlers because of
+	// event queue.
+	go archiveHandler()
+
 	// Init our web request server, which files requests in Incoming
 	go HTTPInboundHandler(":80")
-
-	// Init our classifier, which periodically files requests into folders
-	go classifyHandler()
 
 	// Housekeeping
 	for {
