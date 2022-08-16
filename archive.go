@@ -5,7 +5,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -38,15 +41,38 @@ func archiveHandler() {
 // Process a single archive, by ID
 func performArchive(archiveID string) {
 
-	// Read all events pending for the archive
-	/*	dataDir, _ := os.Open(configDataPath(""))
-		archiveEventFiles, err := dataDir.ReadDir(0)
-		dataDir.Close()
-		if err == nil {
-			for _, archiveEventFile := range archiveEventFiles {
-				//			performArchive(archiveEventFile.Name())
-			}
+	// Number of directory entries to process at a time
+	chunkLen := 1
+
+	// This loop assumes that directory entries come back in sorted order,
+	// and performs work when there is a transition to the next folder.
+	//	prevFolder := ""
+	//	prevTime := int64(0)
+
+	// Loop over directory entries
+	dataDir, _ := os.Open(configDataPath(""))
+	for {
+		files, err := dataDir.ReadDir(chunkLen)
+		if err != nil || len(files) == 0 {
+			break
 		}
-	*/
+		for _, file := range files {
+
+			// Parse the filename into folder and time
+			filename := file.Name()
+			index := strings.LastIndex(filename, " ")
+			if index == -1 {
+				continue
+			}
+			folder := filename[:index]
+			filetime, _ := strconv.ParseInt(filename[index+1:], 10, 0)
+			if filetime == 0 {
+				continue
+			}
+			fmt.Printf("%s\n  '%s' %d\n", filename, folder, filetime)
+
+		}
+	}
+	dataDir.Close()
 
 }
